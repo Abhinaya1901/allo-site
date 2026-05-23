@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Allo Take-Home — Inventory Reservation System
 
-## Getting Started
+Multi-warehouse inventory reservation service. Units are held for 10 minutes at checkout. The hold confirms on payment or releases on cancellation/expiry.
 
-First, run the development server:
+**Live demo:** https://allo-inventory1-chi.vercel.app
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Try the 409 path:** "Allo Tote Bag" in Mumbai has 1 unit. Open two tabs, click Reserve in both fast — one succeeds, the other shows a sold-out error.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Running locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Clone the repo, add DATABASE_URL to .env, then:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    npx prisma migrate dev
+    npx prisma db seed
+    npm run dev
 
-## Learn More
+## How concurrency safety works
 
-To learn more about Next.js, take a look at the following resources:
+The reservation endpoint uses SELECT FOR UPDATE inside a Prisma transaction. This locks the Stock row so concurrent requests serialise — Alice grabs the lock, Bob blocks, Alice commits, Bob reads available=0 and gets 409.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Concurrency proof
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+scripts/concurrency-test.ts fires 50 parallel requests at a 1-unit stock row. Result: 1 success (201), 49 conflicts (409). PASS.
 
-## Deploy on Vercel
+## Expiry
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Vercel Cron runs daily cleanup. Lazy cleanup also runs inside the confirm handler — if expired, returns 410 immediately without waiting for cron.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Trade-offs
+
+- Skipped idempotency bonus — would use a unique-constrained IdempotencyKey table
+- Daily cron on free Vercel plan — mitigated by lazy cleanup on confirm
+- No auth — reservations are anonymous UUIDs# Allo Take-Home — Inventory Reservation System
+
+Multi-warehouse inventory reservation service. Units are held for 10 minutes at checkout. The hold confirms on payment or releases on cancellation/expiry.
+
+**Live demo:** https://allo-inventory1-chi.vercel.app
+
+**Try the 409 path:** "Allo Tote Bag" in Mumbai has 1 unit. Open two tabs, click Reserve in both fast — one succeeds, the other shows a sold-out error.
+
+## Running locally
+
+Clone the repo, add DATABASE_URL to .env, then:
+
+    npx prisma migrate dev
+    npx prisma db seed
+    npm run dev
+
+## How concurrency safety works
+
+The reservation endpoint uses SELECT FOR UPDATE inside a Prisma transaction. This locks the Stock row so concurrent requests serialise — Alice grabs the lock, Bob blocks, Alice commits, Bob reads available=0 and gets 409.
+
+## Concurrency proof
+
+scripts/concurrency-test.ts fires 50 parallel requests at a 1-unit stock row. Result: 1 success (201), 49 conflicts (409). PASS.
+
+## Expiry
+
+Vercel Cron runs daily cleanup. Lazy cleanup also runs inside the confirm handler — if expired, returns 410 immediately without waiting for cron.
+
+## Trade-offs
+
+- Skipped idempotency bonus — would use a unique-constrained IdempotencyKey table
+- Daily cron on free Vercel plan — mitigated by lazy cleanup on confirm
+- No auth — reservations are anonymous UUIDs
