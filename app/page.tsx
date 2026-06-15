@@ -38,6 +38,73 @@ function StockBadge({ available }: { available: number }) {
   );
 }
 
+function ProductIcon({ sku }: { sku: string }) {
+  const prefix = sku.split("-")[0];
+
+  const configs: Record<string, { bg: string; fg: string; icon: React.ReactNode }> = {
+    TSHIRT: {
+      bg: "#eef2ff",
+      fg: "#4338ca",
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 3.5l5 3-2 4-3-1.5V20a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9l-3 1.5-2-4 5-3a3 3 0 0 0 6 0z" />
+        </svg>
+      ),
+    },
+    MUG: {
+      bg: "#fef3c7",
+      fg: "#b45309",
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 8h12v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z" />
+          <path d="M16 9h2a2.5 2.5 0 0 1 0 5h-2" />
+          <line x1="7" y1="3" x2="7" y2="5" />
+          <line x1="10" y1="2.5" x2="10" y2="5" />
+          <line x1="13" y1="3" x2="13" y2="5" />
+        </svg>
+      ),
+    },
+    BAG: {
+      bg: "#dcfce7",
+      fg: "#15803d",
+      icon: (
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 8h12l1 13H5L6 8z" />
+          <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+        </svg>
+      ),
+    },
+  };
+
+  const cfg = configs[prefix] ?? {
+    bg: "var(--surface-muted)",
+    fg: "var(--text-muted)",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="2" />
+      </svg>
+    ),
+  };
+
+  return (
+    <div
+      style={{
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        background: cfg.bg,
+        color: cfg.fg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      {cfg.icon}
+    </div>
+  );
+}
+
 function Skeleton() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -140,12 +207,15 @@ export default function HomePage() {
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
-                <div style={{ padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid var(--border)" }}>
-                  <div>
-                    <h2 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 4px", letterSpacing: "-0.01em" }}>{p.name}</h2>
-                    <span style={{ fontSize: 12, fontFamily: "ui-monospace, monospace", color: "var(--text-faint)", letterSpacing: "0.02em" }}>{p.sku}</span>
+                <div style={{ padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid var(--border)", gap: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <ProductIcon sku={p.sku} />
+                    <div>
+                      <h2 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 4px", letterSpacing: "-0.01em" }}>{p.name}</h2>
+                      <span style={{ fontSize: 12, fontFamily: "ui-monospace, monospace", color: "var(--text-faint)", letterSpacing: "0.02em" }}>{p.sku}</span>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em" }}>₹{(p.priceCents / 100).toLocaleString("en-IN")}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>₹{(p.priceCents / 100).toLocaleString("en-IN")}</div>
                 </div>
                 <div style={{ padding: "8px 24px 20px" }}>
                   {p.stocks.map((s) => (
